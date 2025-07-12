@@ -1,0 +1,54 @@
+
+version: '3.8'
+
+services:
+  backend:
+    build: ./enap_backend
+    restart: always
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./enap_backend:/app
+    env_file:
+      - ./enap_backend/.env
+    depends_on:
+      - db
+    command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+    networks:
+      - enap-network
+
+  frontend:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./:/app
+      - /app/node_modules
+    env_file:
+      - ./.env
+    depends_on:
+      - backend
+    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "3000"]
+    networks:
+      - enap-network
+
+  db:
+    image: postgres:14
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=enap
+    ports:
+      - "5432:5432"
+    networks:
+      - enap-network
+
+volumes:
+  postgres_data:
+
+networks:
+  enap-network:
+    driver: bridge
